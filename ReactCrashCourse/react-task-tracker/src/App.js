@@ -1,9 +1,13 @@
 //only for class based react components
 // import React from 'react'
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useEffect } from "react";
 import Header from "./components/Header";
 import { Tasks } from "./components/Tasks";
 import AddTask from "./components/AddTask";
+import Footer from "./components/Footer";
+import About from "./components/About";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 function App() {
   const [showAddTask, setShowAddTask] = useState(false);
@@ -11,36 +15,75 @@ function App() {
   // const name ='Brad'
   // const x = true
 
+  //gets called on scene render
   useEffect(() => {
-    const fetchTasks = async () => {
-      const res = await fetch("http://localhost:5000/tasks");
-      const data = await res.json();
-
-      console.log(data);
-
-      return data;
+    const getTasks = async () => {
+      const tasksFromServer = await fetchTasks();
+      setTasks(tasksFromServer);
     };
 
+    getTasks();
     fetchTasks();
   }, []);
 
+  //Fetch Tasks
+  const fetchTasks = async () => {
+    const res = await fetch("http://localhost:5000/tasks");
+    const data = await res.json();
+
+    return data;
+  };
+
+  //Fetch Task
+  const fetchTask = async (id) => {
+    const res = await fetch(`http://localhost:5000/tasks/${id}`);
+    const data = await res.json();
+
+    return data;
+  };
+
   //add task
-  const addTask = (task) => {
-    const id = Math.floor(Math.random() * 10000) + 1;
-    const newTask = { id, ...task };
-    setTasks([...tasks, newTask]);
+  const addTask = async (task) => {
+    const res = await fetch("http://localhost:5000/tasks", {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify(task),
+    });
+
+    const data = await res.json();
+
+    setTasks([...tasks, data]);
+    // const id = Math.floor(Math.random() * 10000) + 1;
+    // const newTask = { id, ...task };
+    // setTasks([...tasks, newTask]);
   };
 
   //delete task
-  const deleteTask = (id) => {
+  const deleteTask = async (id) => {
+    await fetch(`http://localhost:5000/tasks/${id}`, { method: "DELETE" });
+
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
   //toggles reminder of component that got double clicked
-  const toggleReminder = (id) => {
+  const toggleReminder = async (id) => {
+    const taskToToggle = await fetchTask(id);
+    const updatedTask = { ...taskToToggle, reminder: !taskToToggle.reminder };
+
+    const res = await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: "Put",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify(updatedTask),
+    });
+
+    const data = await res.json();
     setTasks(
       tasks.map((task) =>
-        task.id === id ? { ...task, reminder: !task.reminder } : task
+        task.id === id ? { ...task, reminder: data.reminder } : task
       )
     );
   };
@@ -51,20 +94,40 @@ function App() {
   }
 
   return (
-    <div className="container">
-      <Header onAdd={toggleAddInput} showAdd={showAddTask} />
-      {showAddTask ? (
-        <AddTask onAdd={addTask} />
-      ) : (
-        console.log("Add Task is closed")
-      )}
+    <BrowserRouter>
+      <div className="container">
+        <Header onAdd={toggleAddInput} showAdd={showAddTask} />
 
-      {tasks.length > 0 ? (
-        <Tasks tasks={tasks} onDelete={deleteTask} onToggle={toggleReminder} />
-      ) : (
-        "No Tasks To Show"
-      )}
-    </div>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <div>
+                {showAddTask ? (
+                  <AddTask onAdd={addTask} />
+                ) : (
+                  console.log("Add Task is closed")
+                )}
+
+                {tasks.length > 0 ? (
+                  <Tasks
+                    tasks={tasks}
+                    onDelete={deleteTask}
+                    onToggle={toggleReminder}
+                  />
+                ) : (
+                  "No Tasks To Show"
+                )}
+              </div>
+            }
+          ></Route>
+        </Routes>
+        <Routes>
+          <Route path="/About" element={<About />}></Route>
+        </Routes>
+        <Footer></Footer>
+      </div>
+    </BrowserRouter>
   );
 }
 // if (id === task.div) {

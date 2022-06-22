@@ -1,0 +1,17 @@
+.sudoku-board {
+  width: 100%;
+  aspect-ratio: 1/1;
+  border: 1px solid steelblue;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  margin: 30px auto;
+}
+
+.row1 {
+  box-sizing: border-box;
+  background-color: red;
+}
+
+.sudoku-board div {
+  border: 1px solid steelblue;
+}
